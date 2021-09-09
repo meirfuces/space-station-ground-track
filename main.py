@@ -72,7 +72,6 @@ js = None
 while js is  None:
     js = jsonSat()
 
-# print(js)
 
 import json
 
@@ -92,8 +91,6 @@ t = int(time.time())
 print("our time:"+str(t))
 print("sat time:"+str(satT))
 
-# if (t - satT) != 0:
-#     wait(abs((t - satT)))
 print(azim)
 print(alt)
 
@@ -122,34 +119,39 @@ height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 writer = cv2.VideoWriter('basicvideo.mp4', cv2.VideoWriter_fourcc(*'DIVX'), 20, (width, height))
 
 
-# a = 1
 while True:
 
-    # a = a + 1
+    # get feed from camera
     check, frame = video.read()
-    # status = 0
+
+    # image manipultaion for maximizing differences between images
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
     # the command to record
     writer.write(frame)
-
+    # if we our in the first frame there is nothiing to compare to -> continue to next iteration
     if first_frame is None:
         first_frame = gray
         continue
 
     # subtracting frames
+    # finding the diffrences
     delta_frame = cv2.absdiff(first_frame, gray)
+    # collecting the diffrences into one param 
     th_delta = cv2.threshold(delta_frame, 60, 255, cv2.THRESH_BINARY)[1]
+    # removing the weak differences from the group we collected
     th_delta = cv2.dilate(th_delta, None, iterations=0)
+    # finding the shapes around the differences
     (cnts, _) = cv2.findContours(th_delta.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     for contour in cnts:
         # the size of tracking we are looking to track
         # if cv2.contourArea(contour) < 10000:
         if cv2.contourArea(contour) < 5000:
+            # the object is too small so we will skip to the next object that moves
             continue
-        status = 1
+            # color a rectangle around the moving object
         (x, y, w, h) = cv2.boundingRect(contour)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
@@ -171,41 +173,10 @@ while True:
         speedX = findSpeed(xDir, 100, 7)
         speedY = findSpeed(yDir, 100, 7)
 
-        # if abs(xDir) < 100:
-        #     speedX = 6
-        #
-        # if abs(xDir) < 75:
-        #     speedX = 5
-        #
-        # if abs(xDir) < 50:
-        #     speedX = 4
-        #
-        # if abs(xDir) < 25:
-        #     speedX = 3
-        #
-        # if abs(yDir) < 100:
-        #     speedY = 6
-        #
-        # if abs(yDir) < 75:
-        #     speedY = 5
-        #
-        # if abs(yDir) < 50:
-        #     speedY = 4
-        #
-        # if abs(yDir) < 25:
-        #     speedY = 3
 
         # Move telescope in x and y direction
         telescope.moveX(xDir, speedX)
         telescope.moveY(yDir, speedY)
-
-    # recording what time it happend
-    # status_list.append(status)
-    # status_list = status_list[-2:]
-    # if status_list[-1] == 1 and status_list[-2] == 0:
-    #     times.append(datetime.datetime.now())
-    # if status_list[-1] == 0 and status_list[-2] == 1:
-    #     times.append(datetime.datetime.now())
 
     # name of frame
     cv2.imshow('Capturing', frame)
@@ -215,38 +186,10 @@ while True:
     if key == ord('q'):
         break
 
-# analyzing from what time till when
-# for i in range(0, len(times), 2):
-#     df = df.append({"Start": times[i], "End": times[i+1]}, ignore_index=True)
-#
-# df.to_csv("Times_"+datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")+".csv")
-# video.release()
-# cv2.destroyAllWindows()
-#
-# # Code to Generate Graph using Bokeh
-# df["Start_string"] = df["Start"].dt.strftime("%Y-%m-%d %H:%M:%S")
-# df["End_string"] = df["End"].dt.strftime("%Y-%m-%d %H:%M:%S")
-#
-# cds=ColumnDataSource(df)
-#
-# p=figure(x_axis_type='datetime', height=100, width=500, title="Motion Graph")
-# p.yaxis.minor_tick_line_color=None
-# p.ygrid[0].ticker.desired_num_ticks=1
-#
-# hover=HoverTool(tooltips=[("Start", "@Start_string"), ("End", "@End_string")])
-# p.add_tools(hover)
-#
-# q=p.quad(left="Start", right="End", bottom=0, top=1, color="red", source=cds)
-# output_file("Graph"+datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")+".html")
-# show(p)
-# End of Code of Generating Graph
-
+# exit camera feed and stop recording
 video.release()
 writer.release()
+# close cv2 windows
 cv2.destroyAllWindows()
 
-
-# def calculateDistance(x1, y1, x2, y2):
-#     dist = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
-#     return dist
 
